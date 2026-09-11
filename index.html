@@ -532,15 +532,15 @@ async function saveIssuerData(){
       e_email: document.getElementById('e_email').value,
       e_addr: document.getElementById('e_addr').value,
     };
-    await window.storage.set('issuer-profile', JSON.stringify(data), false);
+    localStorage.setItem('issuer-profile', JSON.stringify(data));
   }catch(err){ console.error('No se pudo guardar el perfil', err); }
 }
 
 async function loadIssuerData(){
   try{
-    const res = await window.storage.get('issuer-profile', false);
-    if(res && res.value){
-      const data = JSON.parse(res.value);
+    const raw = localStorage.getItem('issuer-profile');
+    if(raw){
+      const data = JSON.parse(raw);
       document.getElementById('e_name').value = data.e_name || '';
       document.getElementById('e_nif').value = data.e_nif || '';
       document.getElementById('e_email').value = data.e_email || '';
@@ -553,7 +553,7 @@ async function saveInvoice(){
   const data = collectFormData();
   const id = 'invoice:' + (data.inv_num || Date.now());
   try{
-    await window.storage.set(id, JSON.stringify(data), false);
+    localStorage.setItem(id, JSON.stringify(data));
     await saveIssuerData();
     document.getElementById('statusTag').textContent = 'Factura guardada ✓';
     setTimeout(()=>{ document.getElementById('statusTag').textContent = 'Guardado localmente en tu navegador'; }, 2000);
@@ -567,15 +567,14 @@ async function saveInvoice(){
 async function loadSavedList(){
   const list = document.getElementById('savedList');
   try{
-    const res = await window.storage.list('invoice:', false);
-    if(!res || !res.keys || res.keys.length === 0){
+    const keys = Object.keys(localStorage).filter(k => k.startsWith('invoice:'));
+    if(keys.length === 0){
       list.innerHTML = '<div class="sd">Aún no has guardado ninguna.</div>';
       return;
     }
     list.innerHTML = '';
-    for(const key of res.keys){
-      const item = await window.storage.get(key, false);
-      const data = JSON.parse(item.value);
+    for(const key of keys){
+      const data = JSON.parse(localStorage.getItem(key));
       const div = document.createElement('div');
       div.className = 'saved-item';
       div.innerHTML = `<span>Factura ${data.inv_num || '—'} · ${data.c_name || 'sin cliente'}</span><span class="sd">${data.inv_date || ''}</span>`;
