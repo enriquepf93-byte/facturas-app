@@ -1,4 +1,4 @@
-const CACHE_NAME = 'facturas-v3';
+const CACHE_NAME = 'facturas-v4';
 const ASSETS = [
   './index.html',
   './manifest.json',
