@@ -337,12 +337,8 @@
     <button class="add-line" id="addLine">+ Añadir línea</button>
 
     <div class="actions">
-      <button class="primary" id="saveBtn">Guardar factura</button>
-      <button class="secondary" id="printBtn">Descargar PDF</button>
+      <button class="secondary" id="printBtn" style="flex:1;">Descargar PDF</button>
     </div>
-
-    <div class="section-title">Facturas guardadas</div>
-    <div class="saved-list" id="savedList"><div class="sd">Aún no has guardado ninguna.</div></div>
   </div>
 
   <div class="preview-wrap">
@@ -549,70 +545,17 @@ async function loadIssuerData(){
   }catch(err){ /* no hay perfil guardado todavía */ }
 }
 
-async function saveInvoice(){
-  const data = collectFormData();
-  const id = 'invoice:' + (data.inv_num || Date.now());
-  try{
-    localStorage.setItem(id, JSON.stringify(data));
-    await saveIssuerData();
-    document.getElementById('statusTag').textContent = 'Factura guardada ✓';
-    setTimeout(()=>{ document.getElementById('statusTag').textContent = 'Guardado localmente en tu navegador'; }, 2000);
-    loadSavedList();
-  }catch(err){
-    document.getElementById('statusTag').textContent = 'Error al guardar';
-    console.error(err);
-  }
-}
-
-async function loadSavedList(){
-  const list = document.getElementById('savedList');
-  try{
-    const keys = Object.keys(localStorage).filter(k => k.startsWith('invoice:'));
-    if(keys.length === 0){
-      list.innerHTML = '<div class="sd">Aún no has guardado ninguna.</div>';
-      return;
-    }
-    list.innerHTML = '';
-    for(const key of keys){
-      const data = JSON.parse(localStorage.getItem(key));
-      const div = document.createElement('div');
-      div.className = 'saved-item';
-      div.innerHTML = `<span>Factura ${data.inv_num || '—'} · ${data.c_name || 'sin cliente'}</span><span class="sd">${data.inv_date || ''}</span>`;
-      div.addEventListener('click', () => loadInvoice(data));
-      list.appendChild(div);
-    }
-  }catch(err){
-    list.innerHTML = '<div class="sd">Aún no has guardado ninguna.</div>';
-  }
-}
-
-function loadInvoice(data){
-  document.getElementById('e_name').value = data.e_name || '';
-  document.getElementById('e_nif').value = data.e_nif || '';
-  document.getElementById('e_email').value = data.e_email || '';
-  document.getElementById('e_addr').value = data.e_addr || '';
-  document.getElementById('c_name').value = data.c_name || '';
-  document.getElementById('c_nif').value = data.c_nif || '';
-  document.getElementById('c_email').value = data.c_email || '';
-  document.getElementById('c_addr').value = data.c_addr || '';
-  document.getElementById('inv_num').value = data.inv_num || '';
-  document.getElementById('inv_date').value = data.inv_date || '';
-  document.getElementById('inv_due').value = data.inv_due || '';
-  document.getElementById('iva_pct').value = data.iva_pct || 21;
-  document.getElementById('irpf_pct').value = data.irpf_pct || 0;
-  linesData.length = 0;
-  lineId = 0;
-  (data.lines || []).forEach(l => addLine(l.desc, l.qty, l.price));
-  updatePreview();
-}
+// autoguardado silencioso de tus propios datos (emisor), sin botón
 
 // wire up events
 document.querySelectorAll('.panel.form input').forEach(inp => {
   inp.addEventListener('input', updatePreview);
 });
 document.getElementById('addLine').addEventListener('click', () => { addLine(); updatePreview(); });
-document.getElementById('saveBtn').addEventListener('click', saveInvoice);
 document.getElementById('printBtn').addEventListener('click', () => window.print());
+['e_name','e_nif','e_email','e_addr'].forEach(id => {
+  document.getElementById(id).addEventListener('input', saveIssuerData);
+});
 
 // registrar service worker (necesario para instalar como app)
 if ('serviceWorker' in navigator) {
@@ -628,7 +571,6 @@ if ('serviceWorker' in navigator) {
   await loadIssuerData();
   addLine('Diseño de logotipo', 1, 250);
   updatePreview();
-  loadSavedList();
 })();
 </script>
 </body>
