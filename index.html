@@ -403,16 +403,19 @@ function addLine(desc='', qty=1, price=0){
 }
 
 function renderLines(){
+  // Reconstruye la lista completa SOLO cuando se añade o quita una línea
+  // (nunca en cada pulsación de tecla, para no perder el foco del teclado).
   const container = document.getElementById('lines');
   container.innerHTML = '';
   linesData.forEach(line => {
     const row = document.createElement('div');
     row.className = 'line-row';
+    row.dataset.rowId = line.id;
     row.innerHTML = `
       <div><label>Descripción</label><input data-id="${line.id}" data-field="desc" value="${line.desc}" placeholder="Concepto"></div>
       <div><label>Cant.</label><input data-id="${line.id}" data-field="qty" type="number" value="${line.qty}"></div>
       <div><label>Precio</label><input data-id="${line.id}" data-field="price" type="number" step="0.01" value="${line.price}"></div>
-      <div><label>&nbsp;</label><input value="${(line.qty*line.price).toFixed(2)}€" disabled style="background:#F2F0EA;"></div>
+      <div><label>&nbsp;</label><input data-amount="${line.id}" value="${(line.qty*line.price).toFixed(2)}€" disabled style="background:#F2F0EA;"></div>
       <button class="remove-line" data-remove="${line.id}">×</button>
     `;
     container.appendChild(row);
@@ -423,7 +426,9 @@ function renderLines(){
       const field = e.target.dataset.field;
       const line = linesData.find(l => l.id === id);
       line[field] = field === 'desc' ? e.target.value : parseFloat(e.target.value) || 0;
-      renderLines();
+      // Actualiza SOLO el importe de esta fila, sin reconstruir el input de texto
+      const amountBox = container.querySelector(`[data-amount="${id}"]`);
+      if(amountBox) amountBox.value = (line.qty * line.price).toFixed(2) + '€';
       updatePreview();
     });
   });
